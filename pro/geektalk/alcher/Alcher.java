@@ -15,20 +15,19 @@ import org.powerbot.core.event.events.MessageEvent;
 import org.powerbot.core.event.listeners.MessageListener;
 import org.powerbot.core.event.listeners.PaintListener;
 import org.powerbot.core.script.ActiveScript;
-import org.powerbot.core.script.job.Task;
 import org.powerbot.core.script.job.state.Node;
 import org.powerbot.core.script.job.state.Tree;
 import org.powerbot.game.api.Manifest;
 import org.powerbot.game.api.methods.Game;
-import org.powerbot.game.api.methods.Widgets;
 import org.powerbot.game.api.methods.input.Mouse;
 import org.powerbot.game.api.methods.input.Mouse.Speed;
 import org.powerbot.game.api.methods.tab.Skills;
 import org.powerbot.game.api.methods.widget.WidgetCache;
-import org.powerbot.game.api.wrappers.widget.WidgetChild;
 import org.powerbot.game.bot.Context;
 import org.powerbot.game.client.Client;
 
+import pro.geektalk.alcher.loops.Antiban;
+import pro.geektalk.alcher.loops.StopScript;
 import pro.geektalk.alcher.misc.Const;
 import pro.geektalk.alcher.misc.Methods;
 import pro.geektalk.alcher.misc.Variables;
@@ -36,9 +35,8 @@ import pro.geektalk.alcher.nodes.AlchFirstItem;
 import pro.geektalk.alcher.nodes.AlchFourthItem;
 import pro.geektalk.alcher.nodes.AlchSecondItem;
 import pro.geektalk.alcher.nodes.AlchThirdItem;
-import pro.geektalk.alcher.nodes.StopScript;
 
-@Manifest(authors = { "OneLuckyDuck" }, name = "Hich Alchemy", description = "A task based high alchemy script", version = 1)
+@Manifest(authors = { "OneLuckyDuck" }, name = "Hich Alchemy", description = "A task based high alchemy script", version = 1.03, website = "http://www.powerbot.org/community/topic/896258-high-alcher-fast-task-system-open-source/")
 public class Alcher extends ActiveScript implements PaintListener,
 		MessageListener {
 
@@ -49,40 +47,42 @@ public class Alcher extends ActiveScript implements PaintListener,
 			RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
 	public void onStart() {
-		Methods.showMessageBox(
-				"KEY BIND!",
-				"Make sure to have the high alchemy spell binded to the '0' key. The script will not function otherwise.\n\n Any bugs please report in full detail on the thread. \n\nThanks for using!");
-		Task.sleep(3500);
+		Methods.showGui();
 		Mouse.setSpeed(Speed.FAST);
 		Variables.startTime = System.currentTimeMillis();
 		Variables.startingExperience = Skills.getExperience(Skills.MAGIC);
 		Variables.startingLevel = Skills.getLevel(Skills.MAGIC);
 		getContainer().submit(new StopScript());
+		getContainer().submit(new Antiban());
 	}
 
 	@Override
 	public int loop() {
-		if (Game.getClientState() != Game.INDEX_MAP_LOADED) {
-			return 2500;
-		}
-		if (client != Context.client()) {
-			WidgetCache.purge();
-			Context.get().getEventManager().addListener(this);
-			client = Context.client();
-		}
-		if (jobContainer != null) {
-			final Node job = jobContainer.state();
-			if (job != null) {
-				jobContainer.set(job);
-				getContainer().submit(job);
-				job.join();
+		if (Variables.guiIsDone) {
+			if (Game.getClientState() != Game.INDEX_MAP_LOADED) {
+				return 2500;
+			}
+			if (client != Context.client()) {
+				WidgetCache.purge();
+				Context.get().getEventManager().addListener(this);
+				client = Context.client();
+			}
+			if (jobContainer != null) {
+				final Node job = jobContainer.state();
+				if (job != null) {
+					jobContainer.set(job);
+					getContainer().submit(job);
+					job.join();
+				}
+			} else {
+				jobs.add(new AlchFirstItem());
+				jobs.add(new AlchSecondItem());
+				jobs.add(new AlchThirdItem());
+				jobs.add(new AlchFourthItem());
+				jobContainer = new Tree(jobs.toArray(new Node[jobs.size()]));
 			}
 		} else {
-			jobs.add(new AlchFirstItem());
-			jobs.add(new AlchSecondItem());
-			jobs.add(new AlchThirdItem());
-			jobs.add(new AlchFourthItem());
-			jobContainer = new Tree(jobs.toArray(new Node[jobs.size()]));
+			return 500;
 		}
 		return 100;
 	}
@@ -129,11 +129,11 @@ public class Alcher extends ActiveScript implements PaintListener,
 		g.drawString(
 				String.format("Level info: %d/%d",
 						Skills.getLevel(Skills.MAGIC), Variables.startingLevel),
-				210, 12);
-		g.drawString(String.format("Alching Item: %d", Variables.slot), 210, 25);
+				220, 12);
+		g.drawString(String.format("Alching Item: %d", Variables.slot), 220, 25);
 		g.drawString(
 				String.format("Coins Made (hr): %s (%s)", coins, coinsHourly),
-				210, 38);
+				220, 38);
 
 		// -- Mouse
 		g.setColor(Mouse.isPressed() ? Color.WHITE.brighter() : Color.BLACK
@@ -160,17 +160,11 @@ public class Alcher extends ActiveScript implements PaintListener,
 		final String m = msg.getMessage();
 		if (m.toLowerCase().contains("have been added ")) {
 			Variables.alchs++;
-			final WidgetChild wc = Widgets.get(137, 58).getChild(0);
-			String s = wc.getText();
-			if (s.contains("have been added ")) {
-				String text = s.substring(0, s.indexOf("co") - 1);
-				if (text.contains(",")) {
-					text = text.replaceAll(",", "");
-				}
-				Variables.coinsMade += Integer.parseInt(text);
+			String text = m.substring(0, m.indexOf("co") - 1);
+			if (text.contains(",")) {
+				text = text.replaceAll(",", "");
 			}
+			Variables.coinsMade += Integer.parseInt(text);
 		}
-
 	}
-
 }

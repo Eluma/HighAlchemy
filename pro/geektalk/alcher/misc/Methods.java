@@ -9,6 +9,7 @@ import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.powerbot.core.script.job.Task;
 import org.powerbot.game.api.methods.Game;
 import org.powerbot.game.api.methods.Tabs;
 import org.powerbot.game.api.methods.interactive.Players;
@@ -19,7 +20,29 @@ import org.powerbot.game.api.wrappers.widget.Widget;
 import org.powerbot.game.api.wrappers.widget.WidgetChild;
 import org.powerbot.game.bot.Context;
 
+import pro.geektalk.alcher.GUI;
+
 public class Methods {
+	
+	public static void showGui() {
+		try {
+			SwingUtilities.invokeLater(new Runnable() {
+
+				@Override
+				public void run() {
+					final GUI gui = new GUI();
+					gui.setVisible(true);
+
+				}
+
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		while(!Variables.guiIsDone) {
+			Task.sleep(100);
+		}
+	}
 
 	public static void showMessageBox(final String title, final String message) {
 		try {

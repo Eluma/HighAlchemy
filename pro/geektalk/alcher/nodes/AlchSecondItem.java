@@ -1,11 +1,14 @@
 package pro.geektalk.alcher.nodes;
 
+import java.awt.Point;
+
 import org.powerbot.core.script.job.Task;
 import org.powerbot.core.script.job.state.Node;
 import org.powerbot.game.api.methods.Widgets;
 import org.powerbot.game.api.methods.input.Keyboard;
 import org.powerbot.game.api.methods.input.Mouse;
 import org.powerbot.game.api.methods.tab.Inventory;
+import org.powerbot.game.api.util.Random;
 import org.powerbot.game.api.wrappers.node.Item;
 import org.powerbot.game.api.wrappers.widget.WidgetChild;
 
@@ -30,14 +33,20 @@ public class AlchSecondItem extends Node {
 		if (item != null) {
 			Methods.s(String.format("Alching %s", item.getName()));
 			if (widget.getText().contains("ast")) {
-				Mouse.click(item.getWidgetChild().getCentralPoint(), true);
+				final Point p = item.getWidgetChild().getCentralPoint();
+				if (Random.nextInt(0, 10) % 2 == 0) {
+					Mouse.click(p.x + Random.nextInt(-7, 7),
+							p.y + Random.nextInt(-7, 7), true);
+				} else {
+					Mouse.click(p, true);
+				}
 				Keyboard.sendText("0", false);
-				Task.sleep(2300);
+				Task.sleep(2000);
 			} else {
 				Keyboard.sendText("0", false);
 				Mouse.click(item.getWidgetChild().getCentralPoint(), true);
 				Keyboard.sendText("0", false);
-				Task.sleep(2300);
+				Task.sleep(2000);
 			}
 		}
 	}
